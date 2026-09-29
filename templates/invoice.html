@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    /* @page is a print-only CSS rule. WeasyPrint honours it; it sets the
+     paper size and margins of the generated PDF. */
+    @page {
+      size: A4;
+      margin: 14mm 12mm;
+    }
+
+    body {
+      font-family: "DejaVu Sans", Arial, sans-serif;
+      font-size: 9pt;
+      color: #000;
+    }
+
+    .copy-marks {
+      text-align: right;
+      margin-bottom: 6mm;
+    }
+
+    .copy-marks div {
+      margin-bottom: 2mm;
+    }
+
+    .header {
+      width: 100%;
+    }
+
+    .header td {
+      vertical-align: top;
+    }
+
+    .seller-name {
+      font-size: 15pt;
+      font-weight: bold;
+      margin-bottom: 1mm;
+    }
+
+    .seller-addr {
+      line-height: 1.45;
+    }
+
+    table.meta {
+      border-collapse: collapse;
+      width: 72mm;
+    }
+
+    table.meta td {
+      border: 1px solid #000;
+      padding: 1.2mm 2mm;
+    }
+
+    table.meta td.label {
+      width: 30mm;
+    }
+
+    table.meta td.value {
+      text-align: right;
+    }
+
+    table.meta th {
+      border: 1px solid #000;
+      padding: 1.6mm;
+      font-size: 11pt;
+    }
+
+    .buyer {
+      margin-top: 5mm;
+      line-height: 1.5;
+    }
+
+    .buyer .caption {
+      font-weight: bold;
+    }
+
+    .buyer .name {
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    table.items {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 6mm;
+    }
+
+    table.items th,
+    table.items td {
+      border: 1px solid #000;
+      padding: 1.5mm 2mm;
+    }
+
+    table.items th {
+      font-size: 8.5pt;
+      text-align: center;
+    }
+
+    table.items td.num {
+      text-align: right;
+    }
+
+    table.items td.center {
+      text-align: center;
+    }
+
+    .desc-line {
+      display: block;
+    }
+
+    .grand {
+      font-weight: bold;
+      background: #000;
+      color: #fff;
+      text-align: right;
+    }
+
+    .footer {
+      width: 100%;
+      margin-top: 10mm;
+    }
+
+    .footer td {
+      vertical-align: top;
+      width: 50%;
+      line-height: 1.5;
+    }
+
+    .sign {
+      margin-top: 22mm;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="copy-marks">
+    <div>Original</div>
+    <div>Duplicate</div>
+  </div>
+
+  <table class="header">
+    <tr>
+      <td>
+        <img src="https://rjtechno.com/wp-content/uploads/2025/04/rj-logo.png" style="width:80px;height:80px;"
+          alt="rj-logo">
+      </td>
+      <td style="text-align:right;">
+        <div class="seller-name" style="text-align:right;">RJ Technologies</div>
+        <div class="seller-addr" style="text-align:right;">
+          301, Shahjanand Plaza,<br>
+          Bhattha, Paldi,<br>
+          Ahmedabad &ndash; 380007<br>
+          M : 9904095104<br>
+          GSTN : 24BTDPS1974A1ZV<br>
+          PAN : BTDPS1974A
+        </div>
+      </td>
+      <td>
+        <table class="meta" style="margin-left: 120px; align-self: self-end;">
+          <tr>
+            <th colspan="2">Tax Invoice</th>
+          </tr>
+          <tr>
+            <td class="label">Invoice NO.</td>
+            <td class="value">{{ inv.invoice_no }}</td>
+          </tr>
+          <tr>
+            <td class="label">Date</td>
+            <td class="value">{{ inv.invoice_date.strftime('%d.%m.%Y') }}</td>
+          </tr>
+          <tr>
+            <td class="label">Terms</td>
+            <td class="value">Against Invoice</td>
+          </tr>
+          <tr>
+            <td class="label">Place</td>
+            <td class="value">Gujarat</td>
+          </tr>
+          <tr>
+            <td class="label">Freight</td>
+            <td class="value">Included</td>
+          </tr>
+          <tr>
+            <td class="label">Installation</td>
+            <td class="value">Included</td>
+          </tr>
+          <tr>
+            <td class="label">PO NO.</td>
+            <td class="value">{{ inv.po_no }}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <div class="buyer">
+    <div class="caption">Buyer Details :</div>
+    <div class="name">{{ inv.buyer_name }}</div>
+    {% for line in inv.buyer_address.split('\n') %}
+    <div>{{ line }}</div>
+    {% endfor %}
+    {% if inv.buyer_gstin %}<div>GSTN : {{ inv.buyer_gstin }}</div>{% endif %}
+  </div>
+
+  {% set intra = inv.igst_total == 0 %}
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th style="width:9mm;">SN</th>
+        <th>Item Name</th>
+        <th style="width:17mm;">HSN/SAC<br>Code</th>
+        <th style="width:15mm;">Item<br>Quantity</th>
+        <th style="width:18mm;">Item<br>Rate</th>
+        <th style="width:20mm;">Total Item<br>Rate</th>
+        {% if intra %}
+        <th style="width:18mm;">SGST</th>
+        <th style="width:18mm;">CGST</th>
+        {% else %}
+        <th style="width:22mm;">IGST</th>
+        {% endif %}
+        <th style="width:22mm;">Item Total<br>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in inv.lines %}
+      <tr>
+        <td class="center">{{ line.sn }}</td>
+        <td>
+          <span class="desc-line">{{ line.item_name }}</span>
+          {% for d in line.description.split('\n') %}
+          {% if d.strip() %}<span class="desc-line">{{ d }}</span>{% endif %}
+          {% endfor %}
+        </td>
+        <td class="center">{{ line.hsn_sac }}</td>
+        <td class="center">{{ line.quantity | int }}</td>
+        <td class="num">{{ line.rate | inr }}</td>
+        <td class="num">{{ line.taxable_value | inr }}</td>
+        {% if intra %}
+        <td class="num">{{ line.sgst_amount | inr }}</td>
+        <td class="num">{{ line.cgst_amount | inr }}</td>
+        {% else %}
+        <td class="num">{{ line.igst_amount | inr }}</td>
+        {% endif %}
+        <td class="num">{{ line.line_total | inr }}</td>
+      </tr>
+      {% endfor %}
+
+      <tr>
+        <td colspan="5"><b>Total :</b></td>
+        <td class="num"><b>{{ inv.taxable_total | inr }}</b></td>
+        {% if intra %}
+        <td class="num"><b>{{ inv.sgst_total | inr }}</b></td>
+        <td class="num"><b>{{ inv.cgst_total | inr }}</b></td>
+        {% else %}
+        <td class="num"><b>{{ inv.igst_total | inr }}</b></td>
+        {% endif %}
+        <td class="grand">{{ inv.grand_total | inr }}</td>
+      </tr>
+      <tr>
+        <td>INR :</td>
+        <td colspan="{{ 8 if intra else 7 }}">{{ inv.amount_in_words }}</td>
+      </tr>
+      {% if inv.tax_in_words %}
+      <tr>
+        <td>Tax :</td>
+        <td colspan="{{ 8 if intra else 7 }}">{{ inv.tax_in_words }}</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <table class="footer">
+    <tr>
+      <td>
+        For, RJ Technologies
+        <div class="sign" style="margin-top: 150px;">Authorized Signatory</div>
+      </td>
+      <td>
+        Bank Details :<br>
+        Bank Name : HDFC Bank<br>
+        Account NO : 50200033143629<br>
+        IFSC Code : HDFC0001229
+      </td>
+    </tr>
+  </table>
+
+</body>
+
+</html>

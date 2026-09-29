@@ -1,0 +1,108 @@
+# ---------------------------- main.py --------------------------
+
+@app.post("/api/invoice/company_add", response_model=schemas.CompanyOut, status_code=201)
+def create_company(payload: schemas.CompanyCreate, db: Session = Depends(get_db)):
+    company = models.Company(
+        company_name=payload.company_name,
+        company_address_1=payload.company_address_1,
+        company_address_2=payload.company_address_2,
+        company_address_3=payload.company_address_3,
+        company_gstin=payload.company_gstin,
+        company_department_or_person=payload.company_department_or_person,
+        )
+    
+    db.add(company)
+    db.commit()
+    db.refresh(company)
+    return company
+
+
+@app.get("/api/company", response_model=list[schemas.CompanyOut])
+def list_company(db: Session = Depends(get_db)):
+    stmt = select(models.Company).order_by(models.Company.id.desc())
+    return db.execute(stmt).scalars().all()
+
+
+@app.post("/api/invoice/item_add", response_model=schemas.itemOut, status_code=201)
+def create_item(payload: schemas.itemCreate, db: Session = Depends(get_db)):
+    item_data = models.Item_table(
+        item_name=payload.item_name,
+        description=payload.description,
+        hsn_sac=payload.hsn_sac,
+        rate=payload.rate,
+        gst_rate=payload.gst_rate,
+    )
+    db.add(item_data)
+    db.commit()
+    db.refresh(item_data)
+    return item_data
+
+@app.get("/api/invoice/item_get", response_model=list[schemas.itemOut])
+def list_item(db: Session = Depends(get_db)):
+    stmt = select(models.Item_table).order_by(models.Item_table.id.desc())
+    return db.execute(stmt).scalars().all()
+	
+	
+	
+	
+	
+		
+# ---------------------------- model.py --------------------------
+
+class Company(Base):
+    __tablename__ = "companies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    company_name: Mapped[str] = mapped_column(String(200))
+    company_address_1: Mapped[str] = mapped_column(String(200))
+    company_address_2: Mapped[str] = mapped_column(String(200))
+    company_address_3: Mapped[str] = mapped_column(String(200))
+    company_gstin: Mapped[str] = mapped_column(String(15))
+    company_department_or_person: Mapped[str] = mapped_column(String(200))
+    
+class Item_table(Base):
+    __tablename__ = "item_table"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="")
+    hsn_sac: Mapped[str] = mapped_column(String(8), default="")
+    rate: Mapped[Decimal] = mapped_column(Numeric(14, 2))
+    gst_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
+	
+	
+	
+	
+# ---------------------------- schemas.py --------------------------
+
+class CompanyCreate(BaseModel):
+    company_name: str = Field(min_length=1, max_length=200)
+    company_address_1: str = ""
+    company_address_2: str = ""
+    company_address_3: str = ""
+    company_gstin: str = ""
+    company_department_or_person: str = ""
+
+class CompanyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    company_name: str
+    company_address_1: str
+    company_address_2: str
+    company_address_3: str
+    company_gstin: str
+    company_department_or_person: str
+
+class itemCreate(BaseModel):
+    item_name: str = Field(min_length=1, max_length=200)
+    description: str = ""
+    hsn_sac: str = ""
+    rate: Decimal = Field(ge=0)
+    gst_rate: Decimal = Field(default=Decimal("18"), ge=0, le=28)
+
+class itemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    item_name: str
+    description: str
+    hsn_sac: str
+    rate: Decimal
+    gst_rate: Decimal
